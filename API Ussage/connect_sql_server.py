@@ -7,8 +7,8 @@ import pyodbc
 driver = 'ODBC Driver 17 for SQL Server'
 server = 'localhost,1433' 
 database = 'AdventureWorksDW2017' 
-username = 'SA'
-password = '@PassW0rd' 
+username = 'sa'
+password = 'eKwr2715' 
 
 cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
 #cnxn = pyodbc.connect('DRIVER={SQL Server};SERVER=localhost,1433;DATABASE=AdventureWorks;UID=SA;PWD=eKwr_2715')
