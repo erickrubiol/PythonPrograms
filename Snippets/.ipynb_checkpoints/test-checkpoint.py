@@ -70,30 +70,10 @@ def export_to_csv(df, filename):
     df.to_csv(ruta_de_salida + filename, index = False)
 
 def delete_top_rows(dataframe):
-        # Identifica en que fila se encuentra el primer encabezado (variable nombre_primera_columa) 
         top_row = dataframe.index[dataframe['Unnamed: 0'] == nombre_primera_columa].tolist()
-        
-        # Elimina las primeras filas que no tienen datos
-        dataframe = dataframe.iloc[top_row[0]:]
-        dataframe = dataframe.reset_index(drop=True)
-        
-        # Promover primera fila como encabezado de columna
-        new_header = dataframe.iloc[0]
-        dataframe = dataframe[1:]
-        dataframe.columns = new_header 
-        
-        return dataframe
-
-def select_columns(filename, old_df):
-    # Toma del nombre del archivo el último periodo con datos
-    row_value = filename.split('.')[0][-6:-3] + "'" + filename.split('.')[0][-2:]
-    
-    # Selecciona columnas especificadas en lista_campos + ultimo periodo
-    old_df['Periodo'] = row_value
-    old_df = old_df[lista_campos + [row_value]]
-    old_df.rename(columns = {row_value:'Value'}, inplace = True) 
-    
-    return old_df
+        df = dataframe.iloc[top_row[0]:]
+        df = dataframe.reset_index(drop=True)
+        return df
 
 def main():
 
@@ -102,19 +82,29 @@ def main():
     # DF vacío al que se le anexa cada archivo valido en el sig. for loop
     data = pd.DataFrame(columns=lista_campos + ['Value'])
 
-    for file in all_files:
-        if file.endswith(".xlsb"):
+    for i in all_files:
+        if i.endswith(".xlsb"):
             # Leer archivo binario Excel
-            df = pd.read_excel(file, engine='pyxlsb')
-        elif file.endswith(".xls") or file.endswith(".xlsx"):
-            df = pd.read_excel(file)
+            df = pd.read_excel(i, engine='pyxlsb')
+        elif i.endswith(".xls") or i.endswith(".xlsx"):
+            df = pd.read_excel(i)
             # xlwb = xlApp.Workbooks.Open(filename, False, True, None, password)
 
         # Elimina las primeras filas que no tienen datos
         df = delete_top_rows(df)
 
+        # Promover primera fila como encabezado de columna
+        new_header = df.iloc[0]
+        df = df[1:] 
+        df.columns = new_header 
+
+        # Toma del nombre del archivo el último periodo con datos
+        row_value = i.split('.')[0][-6:-3] + "'" + i.split('.')[0][-2:]
+
         # Selecciona columnas especificadas en lista_campos + ultimo periodo
-        df2 = select_columns(file, df)
+        df['Periodo'] = row_value
+        df2 = df[lista_campos + [row_value]]
+        df2.rename(columns = {row_value:'Value'}, inplace = True) 
 
         # Combina los dataframes en uno solo
         data = data.append(df2, ignore_index=True)
