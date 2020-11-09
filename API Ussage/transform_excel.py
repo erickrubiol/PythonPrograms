@@ -10,15 +10,21 @@
 
 import os
 import pandas as pd
-import xlrd
 from datetime import datetime, date, timedelta
- 
+
+import win32com.client
+import csv
+import sys
+from tempfile import NamedTemporaryFile
+
 # Variables de los archivos den entrada y salida
 folder = 'c:\\Users\\erick\\Desktop\\Archivos'
 lista_campos = ['Periodo', 'Region', 'Country', 'Item Type']
 nombre_primera_columa = 'Region'
 ruta_de_salida = 'c:\\Users\\erick\\Desktop\\'
+excel_password = 'password'
 
+xlApp = win32com.client.Dispatch("Excel.Application")
 
 def inicio_del_mes():
     #Devuelve el primer día del mes actual en formato de fecha
@@ -71,7 +77,7 @@ def export_to_csv(df, filename):
 
 def delete_top_rows(dataframe):
         # Identifica en que fila se encuentra el primer encabezado (variable nombre_primera_columa) 
-        top_row = dataframe.index[dataframe['Unnamed: 0'] == nombre_primera_columa].tolist()
+        top_row = dataframe.index[dataframe[dataframe.columns[0]] == nombre_primera_columa].tolist()
         
         # Elimina las primeras filas que no tienen datos
         dataframe = dataframe.iloc[top_row[0]:]
@@ -95,6 +101,27 @@ def select_columns(filename, old_df):
     
     return old_df
 
+def excel_with_password(filename):
+    # Abre el archivo 
+    xlApp = win32com.client.Dispatch("Excel.Application")
+    xlwb = xlApp.Workbooks.Open(filename, False, True, None, excel_password)
+
+    # Selecciona la pestaña del archivo
+    xlws = xlwb.Sheets(1) # Indice de la pestaña (empieza en 1)
+    #print (xlws.Name)
+    #print (xlws.Cells(1, 1))
+
+    # Crea un archivo temporal en donde deposita los datos
+    f = NamedTemporaryFile(delete=False, suffix='.csv')
+    f.close()
+    os.unlink(f.name)  
+
+    # Guarda los datos en un csv y luego los lee con pandas
+    xlCSVWindows = 0x17  # Convierte los datos en formato CSV (Windows)
+    xlws.SaveAs(Filename=f.name, FileFormat=xlCSVWindows) # Salva a CSV
+    
+    return f.name
+
 def main():
 
     list_of_files(folder)
@@ -107,8 +134,10 @@ def main():
             # Leer archivo binario Excel
             df = pd.read_excel(file, engine='pyxlsb')
         elif file.endswith(".xls") or file.endswith(".xlsx"):
-            df = pd.read_excel(file)
-            # xlwb = xlApp.Workbooks.Open(filename, False, True, None, password)
+            try:
+                df = pd.read_excel(file)
+            except:
+                df = pd.read_csv(excel_with_password(file))
 
         # Elimina las primeras filas que no tienen datos
         df = delete_top_rows(df)
